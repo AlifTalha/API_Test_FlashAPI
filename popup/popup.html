@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>API Tester</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-icon">&#9889;</span>
+        <span class="logo-text">API Tester by TALHA</span>
+      </div>
+      <div class="header-actions">
+        <button
+          id="btn-theme-toggle"
+          class="btn-icon"
+          title="Switch to Light Mode"
+        >
+          &#9790;
+        </button>
+        <button
+          id="btn-collections-toggle"
+          class="btn-icon"
+          title="Collections"
+        >
+          &#128193;
+        </button>
+        <button
+          id="btn-env-toggle"
+          class="btn-icon"
+          title="Environment Variables (Ctrl+E)"
+        >
+          { }
+        </button>
+        <button
+          id="btn-history-toggle"
+          class="btn-icon"
+          title="Request History"
+        >
+          &#128337;
+        </button>
+      </div>
+    </header>
+
+    <!-- ===== MAIN PANEL ===== -->
+    <main class="main-panel" id="main-panel">
+      <!-- REQUEST TABS BAR (rendered by JS) -->
+      <div id="req-tab-bar" class="req-tab-bar"></div>
+
+      <!-- URL BAR -->
+      <div class="url-bar">
+        <select id="method-select" class="method-select">
+          <option value="GET" class="method-get">GET</option>
+          <option value="POST" class="method-post">POST</option>
+          <option value="PUT" class="method-put">PUT</option>
+          <option value="PATCH" class="method-patch">PATCH</option>
+          <option value="DELETE" class="method-delete">DELETE</option>
+        </select>
+        <input
+          id="url-input"
+          class="url-input"
+          type="text"
+          placeholder="https://api.example.com/endpoint"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button
+          id="btn-save-collection"
+          class="btn-save-col"
+          title="Save to Collection"
+        >
+          &#9733;
+        </button>
+        <button
+          id="btn-cors-check"
+          class="btn-cors"
+          title="Check CORS headers for this URL"
+        >
+          CORS
+        </button>
+        <button id="btn-send" class="btn-send">Send</button>
+      </div>
+
+      <!-- REQUEST TABS -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="headers">Headers</button>
+        <button class="tab-btn" data-tab="auth">Auth</button>
+        <button class="tab-btn" data-tab="body">Body</button>
+        <button class="tab-btn" data-tab="params">Params</button>
+      </div>
+
+      <!-- TAB: HEADERS -->
+      <div class="tab-content active" id="tab-headers">
+        <div class="kv-table" id="headers-table">
+          <div class="kv-header">
+            <span>Key</span>
+            <span>Value</span>
+            <span></span>
+          </div>
+          <!-- rows injected by JS -->
+        </div>
+        <button class="btn-add-row" id="btn-add-header">+ Add Header</button>
+      </div>
+
+      <!-- TAB: AUTH -->
+      <div class="tab-content" id="tab-auth">
+        <div class="auth-type-row">
+          <label class="radio-label">
+            <input type="radio" name="auth-type" value="none" checked /> No Auth
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="auth-type" value="bearer" /> Bearer Token
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="auth-type" value="apikey" /> API Key
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="auth-type" value="basic" /> Basic Auth
+          </label>
+        </div>
+
+        <!-- Bearer Token -->
+        <div id="auth-bearer" class="auth-fields hidden">
+          <div class="auth-field-row">
+            <label class="auth-label">Token</label>
+            <input
+              id="auth-bearer-token"
+              type="password"
+              class="auth-input"
+              placeholder="eyJhbGciOiJIUzI1NiIs..."
+              spellcheck="false"
+            />
+            <button class="btn-eye" id="btn-eye-bearer" title="Show/Hide">
+              &#128065;
+            </button>
+          </div>
+          <p class="auth-hint">
+            Adds <code>Authorization: Bearer &lt;token&gt;</code> header
+            automatically.
+          </p>
+        </div>
+
+        <!-- API Key -->
+        <div id="auth-apikey" class="auth-fields hidden">
+          <div class="auth-field-row">
+            <label class="auth-label">Header Name</label>
+            <input
+              id="auth-apikey-name"
+              type="text"
+              class="auth-input"
+              placeholder="X-API-Key"
+              value="X-API-Key"
+              spellcheck="false"
+            />
+          </div>
+          <div class="auth-field-row">
+            <label class="auth-label">Key Value</label>
+            <input
+              id="auth-apikey-value"
+              type="password"
+              class="auth-input"
+              placeholder="your-api-key"
+              spellcheck="false"
+            />
+            <button class="btn-eye" id="btn-eye-apikey" title="Show/Hide">
+              &#128065;
+            </button>
+          </div>
+          <p class="auth-hint">
+            Adds a custom header with the given key value.
+          </p>
+        </div>
+
+        <!-- Basic Auth -->
+        <div id="auth-basic" class="auth-fields hidden">
+          <div class="auth-field-row">
+            <label class="auth-label">Username</label>
+            <input
+              id="auth-basic-user"
+              type="text"
+              class="auth-input"
+              placeholder="username"
+              spellcheck="false"
+            />
+          </div>
+          <div class="auth-field-row">
+            <label class="auth-label">Password</label>
+            <input
+              id="auth-basic-pass"
+              type="password"
+              class="auth-input"
+              placeholder="password"
+              spellcheck="false"
+            />
+            <button class="btn-eye" id="btn-eye-basic" title="Show/Hide">
+              &#128065;
+            </button>
+          </div>
+          <p class="auth-hint">
+            Adds <code>Authorization: Basic &lt;base64&gt;</code> header
+            automatically.
+          </p>
+        </div>
+      </div>
+
+      <!-- TAB: BODY -->
+      <div class="tab-content" id="tab-body">
+        <div class="body-type-row">
+          <label class="radio-label">
+            <input type="radio" name="body-type" value="none" checked /> None
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="body-type" value="json" /> JSON
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="body-type" value="form" /> Form
+            (URL-encoded)
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="body-type" value="multipart" /> Multipart
+          </label>
+        </div>
+        <textarea
+          id="body-editor"
+          class="body-editor hidden"
+          placeholder='{\n  "key": "value"\n}'
+          spellcheck="false"
+        ></textarea>
+        <div id="form-editor" class="kv-table hidden">
+          <div class="kv-header">
+            <span>Key</span>
+            <span>Value</span>
+            <span></span>
+          </div>
+          <!-- rows injected by JS -->
+        </div>
+        <button class="btn-add-row hidden" id="btn-add-form-row">
+          + Add Field
+        </button>
+
+        <!-- MULTIPART EDITOR -->
+        <div id="multipart-editor" class="multipart-editor hidden">
+          <div class="mp-header">
+            <span>Field Name</span>
+            <span>Type</span>
+            <span>Value / File</span>
+            <span></span>
+          </div>
+          <!-- rows injected by JS -->
+        </div>
+        <button class="btn-add-row hidden" id="btn-add-multipart-row">
+          + Add Field
+        </button>
+      </div>
+
+      <!-- TAB: PARAMS -->
+      <div class="tab-content" id="tab-params">
+        <div class="kv-table" id="params-table">
+          <div class="kv-header">
+            <span>Key</span>
+            <span>Value</span>
+            <span></span>
+          </div>
+          <!-- rows injected by JS -->
+        </div>
+        <button class="btn-add-row" id="btn-add-param">+ Add Param</button>
+      </div>
+
+      <!-- CORS CHECK PANEL -->
+      <div class="cors-panel hidden" id="cors-panel">
+        <div class="cors-panel-header">
+          <span class="cors-panel-title">&#128737; CORS Check</span>
+          <label class="cors-origin-label">Origin</label>
+          <input
+            id="cors-origin-input"
+            class="cors-origin-input"
+            type="text"
+            value="http://localhost:3000"
+            placeholder="http://localhost:3000"
+            spellcheck="false"
+          />
+          <button id="btn-cors-run" class="btn-cors-run">Check</button>
+          <button id="btn-cors-close" class="btn-cors-close" title="Close">
+            &#10005;
+          </button>
+        </div>
+        <div class="cors-result hidden" id="cors-result"></div>
+      </div>
+
+      <!-- RESPONSE SECTION -->
+      <div class="response-section" id="response-section">
+        <div class="response-meta" id="response-meta">
+          <!-- Status badge, time, size injected by JS -->
+        </div>
+        <div class="response-tabs">
+          <button class="resp-tab-btn active" data-resp-tab="pretty">
+            Pretty
+          </button>
+          <button class="resp-tab-btn" data-resp-tab="raw">Raw</button>
+          <button class="resp-tab-btn" data-resp-tab="resp-headers">
+            Headers
+          </button>
+          <div class="resp-tab-actions">
+            <button
+              id="btn-resp-font-dec"
+              class="btn-resp-action btn-resp-font"
+              title="Decrease font size"
+            >
+              A&#8722;
+            </button>
+            <button
+              id="btn-resp-font-inc"
+              class="btn-resp-action btn-resp-font"
+              title="Increase font size"
+            >
+              A+
+            </button>
+            <span class="resp-action-sep"></span>
+            <button
+              id="btn-resp-fullscreen"
+              class="btn-resp-action"
+              title="Fullscreen response"
+            >
+              &#10530;
+            </button>
+            <span class="resp-action-sep"></span>
+            <button
+              id="btn-copy-response"
+              class="btn-resp-action"
+              title="Copy response to clipboard"
+            >
+              &#128203; Copy
+            </button>
+            <button
+              id="btn-download-json"
+              class="btn-resp-action"
+              title="Download as .json"
+            >
+              &#8595; JSON
+            </button>
+            <button
+              id="btn-download-txt"
+              class="btn-resp-action"
+              title="Download as .txt"
+            >
+              &#8595; TXT
+            </button>
+          </div>
+        </div>
+        <!-- Response search bar (Ctrl+F) -->
+        <div id="resp-search-bar" class="resp-search-bar hidden">
+          <input
+            id="resp-search-input"
+            class="resp-search-input"
+            type="text"
+            placeholder="Find in response…"
+            spellcheck="false"
+          />
+          <span id="resp-search-count" class="resp-search-count"></span>
+          <button
+            id="btn-resp-search-prev"
+            class="btn-resp-search-nav"
+            title="Previous match"
+          >
+            &#8593;
+          </button>
+          <button
+            id="btn-resp-search-next"
+            class="btn-resp-search-nav"
+            title="Next match"
+          >
+            &#8595;
+          </button>
+          <button
+            id="btn-resp-search-close"
+            class="btn-resp-search-close"
+            title="Close (Esc)"
+          >
+            &#10005;
+          </button>
+        </div>
+        <div class="resp-tab-content active" id="resp-tab-pretty">
+          <div id="response-pretty" class="response-body"></div>
+        </div>
+        <div class="resp-tab-content" id="resp-tab-raw">
+          <pre id="response-raw" class="response-body raw-body"></pre>
+        </div>
+        <div class="resp-tab-content" id="resp-tab-resp-headers">
+          <div
+            id="response-headers-view"
+            class="response-body headers-body"
+          ></div>
+        </div>
+      </div>
+
+      <!-- LOADER -->
+      <div class="loader hidden" id="loader">
+        <div class="spinner"></div>
+        <span>Sending request…</span>
+        <button id="btn-cancel" class="btn-cancel">&#9209; Cancel</button>
+      </div>
+
+      <!-- PLACEHOLDER -->
+      <div class="placeholder" id="placeholder">
+        <div class="placeholder-icon">&#128640;</div>
+        <p>Enter a URL and hit <strong>Send</strong></p>
+      </div>
+    </main>
+
+    <!-- ===== COLLECTIONS PANEL ===== -->
+    <aside class="collections-panel hidden" id="collections-panel">
+      <div class="col-panel-header">
+        <span>&#128193; Collections</span>
+        <div class="col-panel-actions">
+          <button
+            id="btn-import-collections"
+            class="btn-col-action"
+            title="Import collections"
+          >
+            &#8593; Import
+          </button>
+          <button
+            id="btn-export-collections"
+            class="btn-col-action"
+            title="Export all collections"
+          >
+            &#8595; Export
+          </button>
+          <button
+            id="btn-close-collections"
+            class="btn-close-history"
+            title="Close"
+          >
+            &#10005;
+          </button>
+        </div>
+      </div>
+      <div class="col-search-row">
+        <input
+          id="col-search"
+          class="col-search-input"
+          type="text"
+          placeholder="Search collections…"
+          spellcheck="false"
+        />
+      </div>
+      <ul class="col-list" id="col-list">
+        <!-- items injected by JS -->
+      </ul>
+    </aside>
+
+    <!-- ===== SAVE COLLECTION MODAL ===== -->
+    <div id="col-modal-overlay" class="col-modal-overlay hidden">
+      <div class="col-modal">
+        <div class="col-modal-header">
+          <span>&#9733; Save to Collection</span>
+          <button id="btn-col-modal-close" class="btn-close-history">
+            &#10005;
+          </button>
+        </div>
+        <div class="col-modal-body">
+          <label class="col-modal-label">Request Name</label>
+          <input
+            id="col-name-input"
+            class="col-modal-input"
+            type="text"
+            placeholder="e.g. Get Users"
+            spellcheck="false"
+          />
+          <label class="col-modal-label" style="margin-top: 10px"
+            >Folder / Group
+            <span
+              style="
+                font-weight: 400;
+                font-size: 11px;
+                color: var(--text-muted);
+              "
+              >(optional)</span
+            ></label
+          >
+          <input
+            id="col-folder-input"
+            class="col-modal-input"
+            type="text"
+            placeholder="e.g. Auth, Users, Products…"
+            spellcheck="false"
+          />
+          <p id="col-modal-preview" class="col-modal-preview"></p>
+        </div>
+        <div class="col-modal-footer">
+          <button id="btn-col-modal-cancel" class="btn-col-cancel">
+            Cancel
+          </button>
+          <button id="btn-col-modal-save" class="btn-send">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- HIDDEN FILE INPUT FOR IMPORT -->
+    <input type="file" id="import-file-input" accept=".json" class="hidden" />
+
+    <!-- ===== IMPORT CONFIRM MODAL ===== -->
+    <div id="import-modal-overlay" class="col-modal-overlay hidden">
+      <div class="col-modal">
+        <div class="col-modal-header">
+          <span>&#8593; Import Collections</span>
+          <button id="btn-import-modal-close" class="btn-close-history">
+            &#10005;
+          </button>
+        </div>
+        <div class="col-modal-body">
+          <p id="import-modal-info" class="import-modal-info"></p>
+          <div class="import-mode-row">
+            <label class="radio-label">
+              <input type="radio" name="import-mode" value="merge" checked />
+              Merge with existing
+            </label>
+            <label class="radio-label">
+              <input type="radio" name="import-mode" value="replace" /> Replace
+              all
+            </label>
+          </div>
+        </div>
+        <div class="col-modal-footer">
+          <button id="btn-import-modal-cancel" class="btn-col-cancel">
+            Cancel
+          </button>
+          <button id="btn-import-modal-confirm" class="btn-send">Import</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ENV VARIABLES PANEL ===== -->
+    <aside class="env-panel hidden" id="env-panel">
+      <div class="env-panel-header">
+        <span>{ } Environment</span>
+        <button id="btn-close-env" class="btn-close-history" title="Close">
+          &#10005;
+        </button>
+      </div>
+      <div class="env-body">
+        <div class="kv-table" id="env-table">
+          <div class="kv-header">
+            <span>Variable</span>
+            <span>Value</span>
+            <span></span>
+          </div>
+          <!-- rows injected by JS -->
+        </div>
+        <button class="btn-add-row" id="btn-add-env-var">+ Add Variable</button>
+      </div>
+      <div class="env-hint-bar">
+        Use <code>{{variable}}</code> in URL, headers, body &amp; auth
+      </div>
+    </aside>
+
+    <!-- ===== HISTORY PANEL ===== -->
+    <aside class="history-panel hidden" id="history-panel">
+      <div class="history-header">
+        <span>History</span>
+        <div class="history-header-actions">
+          <button id="btn-clear-history" class="btn-text-danger">Clear</button>
+          <button
+            id="btn-close-history"
+            class="btn-close-history"
+            title="Close"
+          >
+            &#10005;
+          </button>
+        </div>
+      </div>
+      <ul class="history-list" id="history-list">
+        <!-- items injected by JS -->
+      </ul>
+    </aside>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- ===== STATUS BAR ===== -->
+    <footer class="status-bar" id="status-bar">
+      <div class="sb-left">
+        <span class="sb-dot sb-idle" id="sb-dot"></span>
+        <span class="sb-text" id="sb-text">Ready</span>
+      </div>
+      <span class="sb-shortcuts"
+        >Ctrl+Enter: Send &nbsp;·&nbsp; Ctrl+H: History &nbsp;·&nbsp; Ctrl+T:
+        New Tab &nbsp;·&nbsp; Ctrl+E: Env</span
+      >
+    </footer>
+
+    <!-- RESIZE HANDLE -->
+    <div id="resize-handle" class="resize-handle" title="Drag to resize"></div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
